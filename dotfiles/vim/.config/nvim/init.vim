@@ -7,8 +7,8 @@ set shiftwidth=4
 set smartindent
 set noexpandtab
 set nu rnu
-"set undodir=~/.config/nvim/undodir
-"set undofile
+set undodir=~/.config/nvim/undodir
+set undofile
 set incsearch
 set noswapfile
 set nobackup
@@ -30,14 +30,16 @@ nnoremap <leader>d "_d
 vnoremap <C-j> :move '>+1<CR>gv=gv
 vnoremap <C-k> :move '<-2<CR>gv=gv
 
+autocmd BufWritePre *.go lua vim.lsp.buf.formatting()
+autocmd BufWritePre *.go lua goimports(1000)
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
 			\ execute 'NERDTree' argv()[0] | wincmd p | enew | execute 'cd '.argv()[0] | endif
-augroup fmt
-  autocmd!
-  autocmd BufWritePre * Neoformat
-augroup END
-
+"augroup fmt
+"  autocmd!
+"  autocmd BufWritePre * Neoformat
+"augroup END
+"
 call plug#begin()
 	Plug 'lukas-reineke/indent-blankline.nvim'
 	Plug 'hrsh7th/nvim-cmp'
@@ -59,8 +61,12 @@ call plug#begin()
 	Plug 'sbdchd/neoformat'
 	Plug 'rafamadriz/friendly-snippets'
 	Plug 'kyazdani42/nvim-web-devicons'
+	Plug 'APZelos/blamer.nvim'
 call plug#end()
 
+let g:blamer_delay = 500
+let g:blamer_template = '(<commit-short>) <committer>, <author-time> • <summary>'
+let g:blamer_enabled = 0
 let g:airline#extensions#tabline#enabled = 1
 let g:airline_powerline_fonts = 1
 "set background=dark
@@ -153,17 +159,17 @@ lua<<EOF
 	})
 
 	local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
-
+	-- gopls (Golang LSP)
 	local nvim_lsp = require('lspconfig')
 	nvim_lsp.gopls.setup {
 		cmd = {"gopls", "serve"},
 		capabilities = capabilities,
 		flags = {
-			debounce_text_changes = 150,
+			debounce_text_changes = 250,
 		},
 		settings = {
 			gopls = {
-				experimentalPostfixCompletions = true,
+				experimentalPostfixCompletions = false,
 				analyses = {
 					unusedparams = true,
 					shadow = true,
@@ -178,25 +184,17 @@ lua<<EOF
 	vim.opt.listchars:append("space:⋅")
 	vim.opt.listchars:append("eol:↴")	
 
+	-- pyright (Python LSP)
+	require'lspconfig'.pyright.setup{
+		on_attach = on_attach
+	}
+
 	require("indent_blankline").setup {
 		show_current_context = true,
 		show_current_context_start = true,
 	}
 
 	require'nvim-web-devicons'.setup {
-		-- your personnal icons can go here (to override)
-		-- you can specify color or cterm_color instead of specifying both of them
-		-- DevIcon will be appended to `name`
-		override = {
-			zsh = {
-				icon = "",
-				color = "#428850",
-				cterm_color = "65",
-				name = "Zsh"
-				}
-			};
-		-- globally enable default icons (default to false)
-		-- will get overriden by `get_icons` option
 		default = true;
 	}
 
@@ -217,4 +215,33 @@ lua<<EOF
 	}
 	require('telescope').load_extension('fzf')
 
+	function goimports(timeoutms)
+		local context = { source = { organizeImports = true } }
+		vim.validate { context = { context, "t", true } }
+
+		local params = vim.lsp.util.make_range_params()
+		params.context = context
+
+		-- See the implementation of the textDocument/codeAction callback
+		-- (lua/vim/lsp/handler.lua) for how to do this properly.
+		local result = vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, timeout_ms)
+		if not result or next(result) == nil then return end
+		local actions = result[1].result
+		if not actions then return end
+		local action = actions[1]
+
+		-- textDocument/codeAction can return either Command[] or CodeAction[]. If it
+		-- is a CodeAction, it can have either an edit, a command or both. Edits
+		-- should be executed first.
+		if action.edit or type(action.command) == "table" then
+		  if action.edit then
+			vim.lsp.util.apply_workspace_edit(action.edit)
+		  end
+		  if type(action.command) == "table" then
+			vim.lsp.buf.execute_command(action.command)
+		  end
+		else
+		  vim.lsp.buf.execute_command(action)
+		end
+	end	
 EOF
