@@ -41,6 +41,7 @@ autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in
 "augroup END
 "
 call plug#begin()
+	Plug 'sebdah/vim-delve'
 	Plug 'lukas-reineke/indent-blankline.nvim'
 	Plug 'hrsh7th/nvim-cmp'
 	Plug 'hrsh7th/cmp-nvim-lsp'
@@ -68,6 +69,7 @@ let g:blamer_delay = 500
 let g:blamer_template = '(<commit-short>) <committer>, <author-time> • <summary>'
 let g:blamer_enabled = 0
 let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#buffer_nr_show = 1
 let g:airline_powerline_fonts = 1
 "set background=dark
 let g:airline_theme='gruvbox'
@@ -170,9 +172,14 @@ lua<<EOF
 		settings = {
 			gopls = {
 				experimentalPostfixCompletions = false,
+				usePlaceholders = true,
 				analyses = {
 					unusedparams = true,
 					shadow = true,
+					fieldalignment = true,
+					nilness = true,
+					unusedparams = true,
+					unusedwrite = true,
 				},
 				staticcheck = true,
 			},
