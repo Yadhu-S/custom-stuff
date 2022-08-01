@@ -25,10 +25,13 @@ imap <C-c> <esc>
 imap <expr> <Tab>   vsnip#jumpable(1)   ? '<Plug>(vsnip-jump-next)'      : '<Tab>'
 imap <expr> <S-Tab> vsnip#jumpable(-1)  ? '<Plug>(vsnip-jump-prev)'      : '<S-Tab>'
 nmap <leader>/ :Telescope live_grep<CR>
-nmap <leader>e :NERDTreeToggle<cr>
+nmap <leader>t :NERDTreeToggle<cr>
 nnoremap <leader>d "_d
 vnoremap <C-j> :move '>+1<CR>gv=gv
 vnoremap <C-k> :move '<-2<CR>gv=gv
+vnoremap <C-r> "hy:%s/<C-r>h//gc<left><left><left>
+"Save as sudo"
+cmap w!! w !sudo tee > /dev/null %
 
 autocmd BufWritePre *.go lua vim.lsp.buf.formatting()
 autocmd BufWritePre *.go lua goimports(1000)
@@ -63,6 +66,7 @@ call plug#begin()
 	Plug 'rafamadriz/friendly-snippets'
 	Plug 'kyazdani42/nvim-web-devicons'
 	Plug 'APZelos/blamer.nvim'
+	Plug 'dense-analysis/ale'
 call plug#end()
 
 let g:blamer_delay = 500
@@ -74,13 +78,17 @@ let g:airline_powerline_fonts = 1
 "set background=dark
 let g:airline_theme='gruvbox'
 let g:gruvbox_contrast_dark='hard'
+let g:ale_linters = {
+\   'go': ['revive'],
+\}
+
 colorscheme gruvbox
 
 autocmd VimEnter * hi Normal ctermbg=none
 
 lua<<EOF
 	require'nvim-treesitter.configs'.setup {
-		ensure_installed = "maintained", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+		ensure_installed = "all", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
 		sync_install = false,
 		ignore_install = { "javascript" }, -- List of parsers to ignore installing
 		textobjects = {

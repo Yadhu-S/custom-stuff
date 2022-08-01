@@ -40,5 +40,6 @@ exec nitrogen --restore &
 goblocks &
 exec picom --no-fading-openclose &
 exec dunst &
+exec xset s off -dpms &
 exec dwm
 
