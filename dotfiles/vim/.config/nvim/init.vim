@@ -29,6 +29,7 @@ imap <expr> <S-Tab> vsnip#jumpable(-1)  ? '<Plug>(vsnip-jump-prev)'      : '<S-T
 nmap <leader>/ :Telescope live_grep<CR>
 nmap <leader>t :NvimTreeToggle<cr>
 map <C-_> :Commentary<CR>
+nmap <leader>b :Gitsigns toggle_current_line_blame<CR>
 nnoremap <leader>d "_d
 vnoremap <C-j> :move '>+1<CR>gv=gv
 vnoremap <C-k> :move '<-2<CR>gv=gv
@@ -62,7 +63,6 @@ call plug#begin()
 	Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
 	Plug 'neovim/nvim-lspconfig'
 	Plug 'ryanoasis/vim-devicons'
-	"Plug 'tpope/vim-fugitive'
 	Plug 'lewis6991/gitsigns.nvim'
 	Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 	Plug 'nvim-treesitter/nvim-treesitter-textobjects'
@@ -70,8 +70,8 @@ call plug#begin()
 	Plug 'rafamadriz/friendly-snippets'
 	Plug 'nvim-lualine/lualine.nvim'
 	Plug 'kyazdani42/nvim-web-devicons'
+	Plug 'kylechui/nvim-surround'
 	Plug 'dense-analysis/ale'
-	" Plug 'voldikss/vim-floaterm' " maybe not that useful, IDK
 call plug#end()
 
 ""set background=dark
@@ -82,6 +82,7 @@ let g:ale_linters = {
 
 
 lua<<EOF
+	require("nvim-surround").setup()
 	require('gitsigns').setup()
 	require('kanagawa').setup({
 	transparent = true,
