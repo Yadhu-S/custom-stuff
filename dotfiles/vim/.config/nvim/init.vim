@@ -15,17 +15,20 @@ set nobackup
 set guifont=DejaVuSansMono\ Nerd\ Font\ Mono\ 14
 set ignorecase
 set smartcase
+set splitright
+"set cursorcolumn
+set cursorline
 
 let mapleader=" "
 let $NVIM_TUI_ENABLE_TRUE_COLOR=1
-let NERDTreeChDirMode=0
 noremap <space> <Nop>
 nmap <C-p> :Telescope find_files<CR>
 imap <C-c> <esc>
 imap <expr> <Tab>   vsnip#jumpable(1)   ? '<Plug>(vsnip-jump-next)'      : '<Tab>'
 imap <expr> <S-Tab> vsnip#jumpable(-1)  ? '<Plug>(vsnip-jump-prev)'      : '<S-Tab>'
 nmap <leader>/ :Telescope live_grep<CR>
-nmap <leader>t :NERDTreeToggle<cr>
+nmap <leader>t :NvimTreeToggle<cr>
+map <C-_> :Commentary<CR>
 nnoremap <leader>d "_d
 vnoremap <C-j> :move '>+1<CR>gv=gv
 vnoremap <C-k> :move '<-2<CR>gv=gv
@@ -35,15 +38,15 @@ cmap w!! w !sudo tee > /dev/null %
 
 autocmd BufWritePre *.go lua vim.lsp.buf.formatting()
 autocmd BufWritePre *.go lua goimports(1000)
+
 autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists('s:std_in') |
-			\ execute 'NERDTree' argv()[0] | wincmd p | enew | execute 'cd '.argv()[0] | endif
 "augroup fmt
 "  autocmd!
 "  autocmd BufWritePre * Neoformat
 "augroup END
-"
+
 call plug#begin()
+	Plug 'tpope/vim-commentary'
 	Plug 'sebdah/vim-delve'
 	Plug 'lukas-reineke/indent-blankline.nvim'
 	Plug 'hrsh7th/nvim-cmp'
@@ -51,46 +54,98 @@ call plug#begin()
 	Plug 'hrsh7th/vim-vsnip-integ'
 	Plug 'hrsh7th/cmp-vsnip'
 	Plug 'hrsh7th/vim-vsnip'
-	Plug 'preservim/nerdtree'
-	Plug 'vim-airline/vim-airline'
+	Plug 'kyazdani42/nvim-web-devicons' " optional, for file icons
+	Plug 'kyazdani42/nvim-tree.lua'
 	Plug 'nvim-lua/plenary.nvim'
 	Plug 'nvim-telescope/telescope.nvim'
+	Plug 'rebelot/kanagawa.nvim'
 	Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
 	Plug 'neovim/nvim-lspconfig'
 	Plug 'ryanoasis/vim-devicons'
-	Plug 'tpope/vim-fugitive'
+	"Plug 'tpope/vim-fugitive'
+	Plug 'lewis6991/gitsigns.nvim'
 	Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-	Plug 'morhetz/gruvbox'
 	Plug 'nvim-treesitter/nvim-treesitter-textobjects'
 	Plug 'sbdchd/neoformat'
 	Plug 'rafamadriz/friendly-snippets'
+	Plug 'nvim-lualine/lualine.nvim'
 	Plug 'kyazdani42/nvim-web-devicons'
-	Plug 'APZelos/blamer.nvim'
 	Plug 'dense-analysis/ale'
+	" Plug 'voldikss/vim-floaterm' " maybe not that useful, IDK
 call plug#end()
 
-let g:blamer_delay = 500
-let g:blamer_template = '(<commit-short>) <committer>, <author-time> • <summary>'
-let g:blamer_enabled = 0
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#buffer_nr_show = 1
-let g:airline_powerline_fonts = 1
-"set background=dark
-let g:airline_theme='gruvbox'
-let g:gruvbox_contrast_dark='hard'
+""set background=dark
 let g:ale_linters = {
 \   'go': ['revive'],
 \}
 
-colorscheme gruvbox
 
-autocmd VimEnter * hi Normal ctermbg=none
 
 lua<<EOF
+	require('gitsigns').setup()
+	require('kanagawa').setup({
+	transparent = true,
+	theme = "default"
+	})
+
+	local linecount = function()
+		return vim.api.nvim_buf_line_count(0)
+	end
+	vim.cmd("colorscheme kanagawa")
+
+	require('lualine').setup({
+	sections = {
+		lualine_a = {'mode'},
+		lualine_b = {'branch', 'diff', 'diagnostics'},
+		lualine_c = {{'filename',path = 3}},
+		lualine_x = {'encoding', 'fileformat', 'filetype'},
+		lualine_y = {'progress',linecount},
+		lualine_z = {'location'}
+		},
+	tabline = {
+		lualine_b = {{ "buffers", mode = 4 }}
+		}
+	})
+
+	require("nvim-tree").setup({
+	sort_by = "case_sensitive",
+	hijack_cursor = true,
+	prefer_startup_root = true,
+	update_focused_file = {
+		enable = true,
+		update_root = true,
+		ignore_list = {},
+	},
+	view = {
+		adaptive_size = false,
+		side = "left",
+		mappings = {
+			list = {
+				{ key = "u", action = "dir_up" },
+				},
+			},
+		},
+	renderer = {
+		add_trailing = true,
+		indent_markers = {
+			enable = true,
+			inline_arrows = true,
+			icons = {
+				corner = "└",
+				edge = "│",
+				item = "│",
+				none = " ",
+				},
+			}
+		},
+	filters = {
+		},
+	})
+
 	require'nvim-treesitter.configs'.setup {
-		ensure_installed = "all", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+		ensure_installed = "bash", "c", "cmake", "commonlisp", "cpp", "css", "dockerfile", "go", "gomod", "gowork", "graphql", "haskell", "html", "java", "javascript", "jsdoc", "json", "json5", "jsonc", "latex", "llvm", "lua", "make", "markdown", "markdown_inline", "ninja", "perl", "proto", "python", "query", "regex", "ruby", "rust", "scala", "scheme", "scss", "sql", "svelte", "toml", "tsx", "typescript", "vim", "vue", "yaml", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
 		sync_install = false,
-		ignore_install = { "javascript" }, -- List of parsers to ignore installing
+		ignore_install = {  }, -- List of parsers to ignore installing
 		textobjects = {
 			select = {
 				enable = true,
@@ -131,10 +186,10 @@ lua<<EOF
 		buf_set_keymap('n', '<leader>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
 		buf_set_keymap('n', '<leader>D', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
 		buf_set_keymap('n', '<leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
-		buf_set_keymap('n', '<leader>e', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>', opts)
+		buf_set_keymap('n', '<leader>e', '<cmd>lua vim.diagnostic.open_float()<CR>', opts)
 		buf_set_keymap('n', '<leader>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
-		buf_set_keymap('n', '[d', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
-		buf_set_keymap('n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
+		buf_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
+		buf_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
 	end
 
 	local cmp = require'cmp'
@@ -260,3 +315,4 @@ lua<<EOF
 		end
 	end	
 EOF
+
