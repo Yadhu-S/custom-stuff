@@ -37,8 +37,7 @@ vnoremap <C-r> "hy:%s/<C-r>h//gc<left><left><left>
 "Save as sudo"
 cmap w!! w !sudo tee > /dev/null %
 
-autocmd BufWritePre *.go lua vim.lsp.buf.formatting()
-autocmd BufWritePre *.go lua goimports(1000)
+autocmd BufWritePost *.go :FormatWrite
 
 autocmd StdinReadPre * let s:std_in=1
 "augroup fmt
@@ -72,6 +71,7 @@ call plug#begin()
 	Plug 'kyazdani42/nvim-web-devicons'
 	Plug 'kylechui/nvim-surround'
 	Plug 'dense-analysis/ale'
+	Plug 'mhartington/formatter.nvim'
 call plug#end()
 
 ""set background=dark
@@ -82,8 +82,21 @@ let g:ale_linters = {
 
 
 lua<<EOF
+	require("formatter").setup({
+		filetype = {
+			go = {
+				require("formatter.filetypes.go").goimports,
+			},
+			["*"] = {
+				require("formatter.filetypes.any").remove_trailing_whitespace,
+			},
+		},
+	})
+
 	require("nvim-surround").setup()
+
 	require('gitsigns').setup()
+
 	require('kanagawa').setup({
 	transparent = true,
 	theme = "default"
@@ -286,34 +299,5 @@ lua<<EOF
 	}
 	require('telescope').load_extension('fzf')
 
-	function goimports(timeoutms)
-		local context = { source = { organizeImports = true } }
-		vim.validate { context = { context, "t", true } }
-
-		local params = vim.lsp.util.make_range_params()
-		params.context = context
-
-		-- See the implementation of the textDocument/codeAction callback
-		-- (lua/vim/lsp/handler.lua) for how to do this properly.
-		local result = vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, timeout_ms)
-		if not result or next(result) == nil then return end
-		local actions = result[1].result
-		if not actions then return end
-		local action = actions[1]
-
-		-- textDocument/codeAction can return either Command[] or CodeAction[]. If it
-		-- is a CodeAction, it can have either an edit, a command or both. Edits
-		-- should be executed first.
-		if action.edit or type(action.command) == "table" then
-		  if action.edit then
-			vim.lsp.util.apply_workspace_edit(action.edit)
-		  end
-		  if type(action.command) == "table" then
-			vim.lsp.buf.execute_command(action.command)
-		  end
-		else
-		  vim.lsp.buf.execute_command(action)
-		end
-	end	
 EOF
 
