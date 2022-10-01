@@ -88,11 +88,10 @@ lua<<EOF
 				require("formatter.filetypes.go").goimports,
 			},
 			["*"] = {
-				require("formatter.filetypes.any").remove_trailing_whitespace,
+				--require("formatter.filetypes.any").remove_trailing_whitespace,
 			},
 		},
 	})
-
 	require("nvim-surround").setup()
 
 	require('gitsigns').setup()
@@ -270,8 +269,15 @@ lua<<EOF
 
 	-- pyright (Python LSP)
 	require'lspconfig'.pyright.setup{
+		capabilities = capabilities,
 		on_attach = on_attach
 	}
+
+	require'lspconfig'.clangd.setup{
+		capabilities = capabilities,
+		on_attach = on_attach
+	}
+	
 
 	require("indent_blankline").setup {
 		show_current_context = true,
