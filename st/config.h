@@ -5,7 +5,7 @@
  *
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
-static char *font = " DejaVu Sans Mono:pixelsize=14:antialias=true:autohint=true";
+static char *font = " DejaVu Sans Mono:pixelsize=15:antialias=true:autohint=true";
 static int borderpx = 2;
 
 /*
@@ -144,7 +144,7 @@ static unsigned int defaultrcs = 257;
  * 6: Bar ("|")
  * 7: Snowman ("☃")
  */
-static unsigned int cursorshape = 2;
+static unsigned int cursorshape = 6;
 
 /*
  * Default columns and rows numbers
