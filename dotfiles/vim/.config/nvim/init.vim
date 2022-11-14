@@ -70,7 +70,6 @@ call plug#begin()
 	Plug 'nvim-lualine/lualine.nvim'
 	Plug 'kyazdani42/nvim-web-devicons'
 	Plug 'kylechui/nvim-surround'
-	" Plug 'dense-analysis/ale'
 	Plug 'mhartington/formatter.nvim'
 	Plug 'p00f/clangd_extensions.nvim'
 call plug#end()
@@ -83,6 +82,7 @@ call plug#end()
 
 
 lua<<EOF
+
 	require("formatter").setup({
 		filetype = {
 			go = {
@@ -127,7 +127,7 @@ lua<<EOF
 	prefer_startup_root = true,
 	update_focused_file = {
 		enable = true,
-		update_root = true,
+		update_root = false,
 		ignore_list = {},
 	},
 	view = {
@@ -253,6 +253,8 @@ lua<<EOF
 	local capabilities = require('cmp_nvim_lsp').default_capabilities()
 	-- gopls (Golang LSP)
 	local nvim_lsp = require('lspconfig')
+
+	vim.lsp.set_log_level("off")
 
 	nvim_lsp.gopls.setup {
 		cmd = {"gopls", "serve"},
