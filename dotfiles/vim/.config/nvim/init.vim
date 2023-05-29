@@ -134,11 +134,11 @@ lua<<EOF
 		adaptive_size = false,
 		side = "left",
 		mappings = {
-			list = {
-				{ key = "u", action = "dir_up" },
-				},
-			},
+--			list = {
+--				{ key = "u", action = "dir_up" },
+--				},
 		},
+	},
 	renderer = {
 		add_trailing = true,
 		indent_markers = {
