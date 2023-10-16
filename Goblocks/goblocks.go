@@ -5,6 +5,7 @@ import (
 	"goblocks/util"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/BurntSushi/xgb"
@@ -24,6 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	runtime.GOMAXPROCS(1)
 	defer x.Close()
 	root := xproto.Setup(x).DefaultScreen(x).Root
 	config := config.Get()
