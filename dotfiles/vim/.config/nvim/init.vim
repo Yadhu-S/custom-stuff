@@ -16,7 +16,7 @@ set guifont=DejaVuSansMono\ Nerd\ Font\ Mono\ 14
 set ignorecase
 set smartcase
 set splitright
-"set cursorcolumn
+set cursorcolumn
 set cursorline
 
 let mapleader=" "
@@ -28,7 +28,7 @@ imap <expr> <Tab>   vsnip#jumpable(1)   ? '<Plug>(vsnip-jump-next)'      : '<Tab
 imap <expr> <S-Tab> vsnip#jumpable(-1)  ? '<Plug>(vsnip-jump-prev)'      : '<S-Tab>'
 nmap <leader>/ :Telescope live_grep<CR>
 nmap <leader>t :NvimTreeToggle<cr>
-map <C-_> :Commentary<CR>
+map <C-/> :Commentary<CR>
 nmap <leader>b :Gitsigns toggle_current_line_blame<CR>
 nnoremap <leader>d "_d
 vnoremap <C-j> :move '>+1<CR>gv=gv
@@ -72,9 +72,10 @@ call plug#begin()
 	Plug 'kylechui/nvim-surround'
 	Plug 'mhartington/formatter.nvim'
 	Plug 'p00f/clangd_extensions.nvim'
+	Plug 'nicwest/vim-camelsnek'
 call plug#end()
 
-""set background=dark
+set background=dark
 " let g:ale_linters = {
 " \   'go': ['revive'],
 " \}
@@ -99,7 +100,7 @@ lua<<EOF
 
 	require('kanagawa').setup({
 	transparent = true,
-	theme = "default"
+	theme = "dragon"
 	})
 
 	local linecount = function()
