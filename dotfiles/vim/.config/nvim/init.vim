@@ -27,17 +27,37 @@ imap <C-c> <esc>
 imap <expr> <Tab>   vsnip#jumpable(1)   ? '<Plug>(vsnip-jump-next)'      : '<Tab>'
 imap <expr> <S-Tab> vsnip#jumpable(-1)  ? '<Plug>(vsnip-jump-prev)'      : '<S-Tab>'
 nmap <leader>/ :Telescope live_grep<CR>
+nmap <leader>o :Telescope oldfiles<CR>
+nmap <leader>f :Telescope buffers<CR>
 nmap <leader>t :NvimTreeToggle<cr>
-map <C-/> :Commentary<CR>
+" map <C-/> :Commentary<CR>
+map <C-/> :CommentToggle<CR>
 nmap <leader>b :Gitsigns toggle_current_line_blame<CR>
 nnoremap <leader>d "_d
 vnoremap <C-j> :move '>+1<CR>gv=gv
 vnoremap <C-k> :move '<-2<CR>gv=gv
 vnoremap <C-r> "hy:%s/<C-r>h//gc<left><left><left>
+nnoremap <leader>h :lua require("harpoon.mark").add_file()<CR>
+nnoremap <leader>n :lua require("harpoon.ui").nav_next()<CR>
+nnoremap <leader>p :lua require("harpoon.ui").nav_prev()<CR>
+nnoremap <C-h> :lua require("harpoon.ui").toggle_quick_menu()<CR>
+nnoremap <leader>1 :lua require("harpoon.ui").nav_file(1)<CR>
+nnoremap <leader>2 :lua require("harpoon.ui").nav_file(3)<CR>
+nnoremap <leader>3 :lua require("harpoon.ui").nav_file(5)<CR>
+nnoremap <leader>4 :lua require("harpoon.ui").nav_file(7)<CR>
+nnoremap <leader>5 :lua require("harpoon.ui").nav_file(9)<CR>
+nnoremap <leader>6 :lua require("harpoon.ui").nav_file(11)<CR>
+nnoremap <leader>7 :lua require("harpoon.ui").nav_file(13)<CR>
+nnoremap <leader>8 :lua require("harpoon.ui").nav_file(15)<CR>
+nnoremap <leader>9 :lua require("harpoon.ui").nav_file(17)<CR>
+nnoremap <leader>0 :lua require("harpoon.ui").nav_file(19)<CR>
+
 "Save as sudo"
 cmap w!! w !sudo tee > /dev/null %
 
 autocmd BufWritePost *.go :FormatWrite
+autocmd BufWritePost *.h :Neoformat
+autocmd BufWritePost *.cpp :Neoformat
 
 autocmd StdinReadPre * let s:std_in=1
 "augroup fmt
@@ -46,7 +66,7 @@ autocmd StdinReadPre * let s:std_in=1
 "augroup END
 
 call plug#begin()
-	Plug 'tpope/vim-commentary'
+	" Plug 'tpope/vim-commentary'
 	Plug 'sebdah/vim-delve'
 	Plug 'lukas-reineke/indent-blankline.nvim'
 	Plug 'hrsh7th/nvim-cmp'
@@ -73,6 +93,8 @@ call plug#begin()
 	Plug 'mhartington/formatter.nvim'
 	Plug 'p00f/clangd_extensions.nvim'
 	Plug 'nicwest/vim-camelsnek'
+	Plug 'terrortylor/nvim-comment'
+	Plug 'ThePrimeagen/harpoon'
 call plug#end()
 
 set background=dark
@@ -80,9 +102,10 @@ set background=dark
 " \   'go': ['revive'],
 " \}
 
-
+let g:neoformat_only_msg_on_error = 1
 
 lua<<EOF
+	require('nvim_comment').setup()
 
 	require("formatter").setup({
 		filetype = {
@@ -99,8 +122,8 @@ lua<<EOF
 	require('gitsigns').setup()
 
 	require('kanagawa').setup({
-	transparent = true,
-	theme = "dragon"
+	transparent = false,
+	theme = "lotus"
 	})
 
 	local linecount = function()
@@ -125,27 +148,29 @@ lua<<EOF
 	require("nvim-tree").setup({
 	sort_by = "case_sensitive",
 	hijack_cursor = true,
-	prefer_startup_root = true,
+	prefer_startup_root = false,
+	hijack_directories = {
+		enable = true,
+		auto_open = false,
+	},
 	update_focused_file = {
 		enable = true,
 		update_root = false,
 		ignore_list = {},
 	},
 	view = {
-		adaptive_size = false,
-		side = "left",
+		width = {
+			max = -1,
+		},
+		float = {
+			enable = true,
+		},
 	},
 	renderer = {
 		add_trailing = true,
 		indent_markers = {
 			enable = true,
 			inline_arrows = true,
-			icons = {
-				corner = "└",
-				edge = "│",
-				item = "│",
-				none = " ",
-				},
 			}
 		},
 	filters = {
@@ -204,17 +229,16 @@ lua<<EOF
 
 	local cmp = require'cmp'
 	cmp.setup({
-
-	sorting = {
-		comparators = {
-			cmp.config.compare.offset,
-			cmp.config.compare.exact,
-			cmp.config.compare.recently_used,
-			require("clangd_extensions.cmp_scores"),
-			cmp.config.compare.kind,
-			cmp.config.compare.sort_text,
-			cmp.config.compare.length,
-			cmp.config.compare.order,
+		sorting = {
+			comparators = {
+				cmp.config.compare.offset,
+				cmp.config.compare.exact,
+				cmp.config.compare.recently_used,
+				require("clangd_extensions.cmp_scores"),
+				cmp.config.compare.kind,
+				cmp.config.compare.sort_text,
+				cmp.config.compare.length,
+				cmp.config.compare.order,
 		},
 	},
 
@@ -249,7 +273,7 @@ lua<<EOF
 	local capabilities = require('cmp_nvim_lsp').default_capabilities()
 	local nvim_lsp = require('lspconfig')
 
-	vim.lsp.set_log_level("off")
+	vim.lsp.set_log_level("error")
 
 	-- gopls (Golang LSP)
 	nvim_lsp.gopls.setup {
@@ -288,7 +312,12 @@ lua<<EOF
 
 	require'lspconfig'.clangd.setup{
 	capabilities = capabilities,
-		on_attach = on_attach
+		on_attach = on_attach,
+		name = 'clangd',
+		cmd = {'clangd', '--background-index', '--clang-tidy', '--log=error'},
+		initialization_options = {
+			fallback_flags = { '-std=c++17' },
+		},
 	}
 
 	require("ibl").setup {
@@ -302,21 +331,27 @@ lua<<EOF
 	}
 
 	require('telescope').setup{
-		defaults = {
-			color_devicons = true,
-			mappings = { i = { } },
-			pickers = { },
-			extensions = {
-				fzf = {
-				  fuzzy = true,
-				  override_generic_sorter = true,
-				  override_file_sorter = true,
-				  case_mode = "smart_case",
-				}
+	defaults = {
+		layout_strategy = 'vertical',
+		layout_config = {
+			vertical = { width = 0.9 },
+			},
+		color_devicons = true,
+		mappings = { i = { } },
+		pickers = { },
+		extensions = {
+			fzf = {
+				fuzzy = true,
+				override_generic_sorter = true,
+				override_file_sorter = true,
+				case_mode = "smart_case",
+			}
 			}
 		}
 	}
 	require('telescope').load_extension('fzf')
+	require("telescope").load_extension('harpoon')
+
 
 EOF
 
