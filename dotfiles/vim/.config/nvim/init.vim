@@ -30,6 +30,7 @@ nmap <leader>/ :Telescope live_grep<CR>
 nmap <leader>o :Telescope oldfiles<CR>
 nmap <leader>f :Telescope buffers<CR>
 nmap <leader>t :NvimTreeToggle<cr>
+nmap <leader>s :ClangdSwitchSourceHeader<cr>
 " map <C-/> :Commentary<CR>
 map <C-/> :CommentToggle<CR>
 nmap <leader>b :Gitsigns toggle_current_line_blame<CR>
@@ -95,6 +96,7 @@ call plug#begin()
 	Plug 'nicwest/vim-camelsnek'
 	Plug 'terrortylor/nvim-comment'
 	Plug 'ThePrimeagen/harpoon'
+	Plug 'mfussenegger/nvim-lint'
 call plug#end()
 
 set background=dark
@@ -123,13 +125,12 @@ lua<<EOF
 
 	require('kanagawa').setup({
 	transparent = false,
-	theme = "lotus"
 	})
 
 	local linecount = function()
 		return vim.api.nvim_buf_line_count(0)
 	end
-	vim.cmd("colorscheme kanagawa")
+	vim.cmd("colorscheme kanagawa-wave")
 
 	require('lualine').setup({
 	sections = {
@@ -286,14 +287,14 @@ lua<<EOF
 			gopls = {
 				experimentalPostfixCompletions = false,
 				usePlaceholders = true,
-				analyses = {
-					unusedparams = true,
-					shadow = true,
-					fieldalignment = true,
-					nilness = true,
-					unusedparams = true,
-					unusedwrite = true,
-				},
+				--analyses = {
+			--	unusedparams = true,
+			--	shadow = true,
+			--	fieldalignment = true,
+			--	nilness = true,
+			--	unusedparams = true,
+			--	unusedwrite = true,
+			--},
 				staticcheck = true,
 			},
 		},
@@ -314,7 +315,7 @@ lua<<EOF
 	capabilities = capabilities,
 		on_attach = on_attach,
 		name = 'clangd',
-		cmd = {'clangd', '--background-index', '--clang-tidy', '--log=error'},
+		cmd = {'clangd', '--background-index', '--clang-tidy', '--log=error','--completion-style=detailed', '--header-insertion-decorators'},
 		initialization_options = {
 			fallback_flags = { '-std=c++17' },
 		},
@@ -352,6 +353,9 @@ lua<<EOF
 	require('telescope').load_extension('fzf')
 	require("telescope").load_extension('harpoon')
 
+	require('lint').linters_by_ft = {
+		markdown = {'go'},
+}
 
 EOF
 
