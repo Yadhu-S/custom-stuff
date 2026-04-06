@@ -35,6 +35,7 @@ nmap <leader>t :NvimTreeToggle<cr>
 nmap <leader>s :ClangdSwitchSourceHeader<cr>
 " map <C-/> :Commentary<CR>
 map <C-/> :CommentToggle<CR>
+map <C-_> :CommentToggle<CR>
 nmap <leader>b :Gitsigns toggle_current_line_blame<CR>
 nnoremap <leader>d "_d
 vnoremap <C-j> :move '>+1<CR>gv=gv
