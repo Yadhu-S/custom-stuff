@@ -6,6 +6,7 @@ static const unsigned int gappx     = 5;        /* gap pixel between windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 0;        /* 0 means bottom bar */
+static const int refreshrate        = 30;       /* refresh rate (per second) for client move/resize */
 static const char *fonts[]          = { "DejaVuSansMono Nerd Font:size=10" };
 static const char dmenufont[]       = "DejaVuSansMono Nerd Font:size=10";
 static const char col_gray1[]       = "#222222";
@@ -13,13 +14,16 @@ static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
 static const char col_gray4[]       = "#eeeeee";
 static const char col_cyan[]        = "#005577";
-static const char col_c_green[]		= "#047710";
-static const char some_blue[]		= "#047710";
+static const char col_c_green[]     = "#047710";
+static const char some_blue[]       = "#047710";
 static const char *colors[][3]      = {
 	/*               fg         bg         border   */
 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
 	[SchemeSel]  = { col_gray4, col_c_green,  some_blue  },
 };
+
+/* focusonnetactive: focus window on _NET_ACTIVE_WINDOW instead of marking urgent */
+static const int focusonnetactive = 1;
 
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -61,15 +65,15 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run","-b", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_c_green, "-sf", col_gray4, NULL };
-static const char *termcmd[]  = { "st", NULL };
+static const char *termcmd[]  = { "alacritty", NULL };
 static const char *volUpCmd[] = { "vol_up", NULL};
 static const char *volDownCmd[] = { "vol_down", NULL};
 
-static Key keys[] = {
+static const Key keys[] = {
 	/* modifier                     key        				function        argument */
 	{ MODKEY,                       XK_p,      				spawn,          {.v = dmenucmd } },
 	{ MODKEY|ShiftMask,             XK_Return, 				spawn,          {.v = termcmd } },
-	{ ControlMask|Mod1Mask,         XK_Up,      			spawn,          {.v = volUpCmd } }, 
+	{ ControlMask|Mod1Mask,         XK_Up,      			spawn,          {.v = volUpCmd } },
 	{ ControlMask|Mod1Mask,         XK_Down,      			spawn,          {.v = volDownCmd } },
 	{ MODKEY,                       XK_b,      				togglebar,      {0} },
 	{ MODKEY,                       XK_k,     				focusstack,     {.i = +1 } },
@@ -106,7 +110,7 @@ static Key keys[] = {
 
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
-static Button buttons[] = {
+static const Button buttons[] = {
 	/* click                event mask      button          function        argument */
 	{ ClkLtSymbol,          0,              Button1,        setlayout,      {0} },
 	{ ClkLtSymbol,          0,              Button3,        setlayout,      {.v = &layouts[2]} },
@@ -120,4 +124,3 @@ static Button buttons[] = {
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
 };
-
