@@ -87,8 +87,8 @@ Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
 Plug 'neovim/nvim-lspconfig'
 Plug 'ryanoasis/vim-devicons'
 Plug 'lewis6991/gitsigns.nvim'
-Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-Plug 'nvim-treesitter/nvim-treesitter-textobjects'
+Plug 'nvim-treesitter/nvim-treesitter', { 'branch': 'main' }
+Plug 'nvim-treesitter/nvim-treesitter-textobjects', { 'branch': 'main' }
 Plug 'sbdchd/neoformat'
 Plug 'rafamadriz/friendly-snippets'
 Plug 'nvim-lualine/lualine.nvim'
@@ -187,33 +187,38 @@ filters = {
 	},
 })
 
-require('nvim-treesitter.configs').setup {
-	ensure_installed = {"bash", "c", "cmake", "commonlisp", "cpp", "css", "dockerfile", "go", "gomod", "gowork", "graphql", "haskell", "html", "java", "javascript", "jsdoc", "json", "json5", "jsonc", "latex", "llvm", "lua", "make", "markdown", "markdown_inline", "ninja", "perl", "proto", "python", "query", "regex", "ruby", "rust", "scala", "scheme", "scss", "sql", "svelte", "toml", "tsx", "typescript", "vim", "vue", "yaml"}, -- one of "all", "maintained" (parsers with maintainers), or a list of languages
-	sync_install = false,
-	ignore_install = {  }, -- List of parsers to ignore installing
-	textobjects = {
-		select = {
-			enable = true,
-			lookahead = true,
-			keymaps = {
-				["af"] = "@function.outer",
-				["if"] = "@function.inner",
-			},
-		},
-	},
-	incremental_selection = {
-		enable = true,
-		keymaps = {
-			node_incremental = "<C-l>",
-			node_decremental = "<C-h>",
-		},
-	},
-	highlight = {
-		enable = true,
-		disable = { "vim" },  -- list of language that will be disabled
-		additional_vim_regex_highlighting = false,
-	},
-}
+-- nvim-treesitter `main` branch API (the old `master` branch was archived
+-- 2026-04-03 and is broken on Nvim 0.12). `configs.setup{}` no longer exists:
+-- parsers are installed via install(), highlighting via vim.treesitter.start().
+local ts_parsers = {"bash", "c", "cmake", "commonlisp", "cpp", "css", "dockerfile", "go", "gomod", "gowork", "graphql", "haskell", "html", "java", "javascript", "jsdoc", "json", "json5", "jsonc", "latex", "llvm", "lua", "make", "markdown", "markdown_inline", "ninja", "perl", "proto", "python", "query", "regex", "ruby", "rust", "scala", "scheme", "scss", "sql", "svelte", "toml", "tsx", "typescript", "vim", "vue", "yaml"}
+
+local ok_ts, ts = pcall(require, 'nvim-treesitter')
+if ok_ts then
+	ts.install(ts_parsers)  -- replaces `ensure_installed`; async, no-op if present
+end
+
+-- Enable treesitter highlighting per buffer (replaces `highlight.enable`).
+-- `vim` is left on Vim's regex highlighting, matching the old `disable = {"vim"}`.
+vim.api.nvim_create_autocmd('FileType', {
+	callback = function(ev)
+		if vim.bo[ev.buf].filetype == 'vim' then return end
+		pcall(vim.treesitter.start, ev.buf)
+	end,
+})
+
+-- Textobjects moved to its own `main`-branch API.
+local ok_to, tobj = pcall(require, 'nvim-treesitter-textobjects')
+if ok_to then
+	tobj.setup { select = { lookahead = true } }
+	vim.keymap.set({ "x", "o" }, "af", function()
+		require("nvim-treesitter-textobjects.select").select_textobject("@function.outer", "textobjects")
+	end)
+	vim.keymap.set({ "x", "o" }, "if", function()
+		require("nvim-treesitter-textobjects.select").select_textobject("@function.inner", "textobjects")
+	end)
+end
+-- NOTE: incremental_selection (<C-l>/<C-h>) was removed upstream in the
+-- rewrite and has no built-in replacement; those keymaps no longer work.
 
 local on_attach = function(client, bufnr)
 local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
