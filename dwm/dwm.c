@@ -1387,6 +1387,12 @@ resizeclient(Client *c, int x, int y, int w, int h)
 {
 	XWindowChanges wc;
 
+	/* Skip no-op configures. Callers like setfullscreen/sendmon call this
+	 * unconditionally; redundant ConfigureNotify storms make Vulkan clients
+	 * (UnrealEditor) recreate their swapchain and can livelock with
+	 * VK_ERROR_NATIVE_WINDOW_IN_USE_KHR. */
+	if (x == c->x && y == c->y && w == c->w && h == c->h)
+		return;
 	c->oldx = c->x; c->x = wc.x = x;
 	c->oldy = c->y; c->y = wc.y = y;
 	c->oldw = c->w; c->w = wc.width = w;
@@ -1580,6 +1586,7 @@ void
 setfocus(Client *c)
 {
 	XEvent ev;
+	int rx, ry;
 
 	if (!c->neverfocus)
 		XSetInputFocus(dpy, c->win, RevertToPointerRoot, CurrentTime);
@@ -1588,17 +1595,28 @@ setfocus(Client *c)
 	sendevent(c, wmatom[WMTakeFocus]);
 	/* Send synthetic EnterNotify so apps that rely on hover state to handle
 	 * input (e.g. UE sliders) work correctly without needing a physical
-	 * cursor re-entry after focus changes. */
-	memset(&ev, 0, sizeof(ev));
-	ev.type = EnterNotify;
-	ev.xcrossing.window = c->win;
-	ev.xcrossing.root = root;
-	ev.xcrossing.time = CurrentTime;
-	ev.xcrossing.mode = NotifyNormal;
-	ev.xcrossing.detail = NotifyNonlinear;
-	ev.xcrossing.same_screen = True;
-	ev.xcrossing.focus = True;
-	XSendEvent(dpy, c->win, True, EnterWindowMask, &ev);
+	 * cursor re-entry after focus changes. Only when the pointer is actually
+	 * inside the window, and with the real pointer coordinates — zeroed
+	 * coordinates make apps hit-test (0,0) as the top-left resize corner and
+	 * flicker the cursor. */
+	if (getrootptr(&rx, &ry)
+	&& rx >= c->x + c->bw && rx < c->x + c->bw + c->w
+	&& ry >= c->y + c->bw && ry < c->y + c->bw + c->h) {
+		memset(&ev, 0, sizeof(ev));
+		ev.type = EnterNotify;
+		ev.xcrossing.window = c->win;
+		ev.xcrossing.root = root;
+		ev.xcrossing.time = CurrentTime;
+		ev.xcrossing.mode = NotifyNormal;
+		ev.xcrossing.detail = NotifyNonlinear;
+		ev.xcrossing.same_screen = True;
+		ev.xcrossing.focus = True;
+		ev.xcrossing.x = rx - (c->x + c->bw);
+		ev.xcrossing.y = ry - (c->y + c->bw);
+		ev.xcrossing.x_root = rx;
+		ev.xcrossing.y_root = ry;
+		XSendEvent(dpy, c->win, True, EnterWindowMask, &ev);
+	}
 }
 
 void
@@ -1620,11 +1638,7 @@ setfullscreen(Client *c, int fullscreen)
 		c->isfullscreen = 0;
 		c->isfloating = c->oldstate;
 		c->bw = c->oldbw;
-		c->x = c->oldx;
-		c->y = c->oldy;
-		c->w = c->oldw;
-		c->h = c->oldh;
-		resizeclient(c, c->x, c->y, c->w, c->h);
+		resizeclient(c, c->oldx, c->oldy, c->oldw, c->oldh);
 		arrange(c->mon);
 	}
 }

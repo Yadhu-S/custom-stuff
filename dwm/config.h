@@ -36,6 +36,10 @@ static const Rule rules[] = {
 	/* class      instance    title       tags mask     isfloating   monitor */
 	{ "Gimp",     NULL,       NULL,       0,            1,           -1 },
 	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           -1 },
+	/* Float UnrealEditor: tiling re-arranges force-resize its Vulkan
+	 * swapchain on every window open/close, which can livelock the editor
+	 * with VK_ERROR_NATIVE_WINDOW_IN_USE_KHR. */
+	{ "UnrealEditor", NULL,   NULL,       0,            1,           -1 },
 };
 
 /* layout(s) */
