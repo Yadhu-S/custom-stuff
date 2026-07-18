@@ -63,6 +63,8 @@ autocmd BufWritePost *.go :Neoformat
 autocmd BufWritePost *.h :Neoformat
 autocmd BufWritePost *.cpp :Neoformat
 
+autocmd BufRead,BufNewFile *.ush set filetype=hlsl
+
 autocmd StdinReadPre * let s:std_in=1
 "augroup fmt
 "  autocmd!
@@ -190,7 +192,7 @@ filters = {
 -- nvim-treesitter `main` branch API (the old `master` branch was archived
 -- 2026-04-03 and is broken on Nvim 0.12). `configs.setup{}` no longer exists:
 -- parsers are installed via install(), highlighting via vim.treesitter.start().
-local ts_parsers = {"bash", "c", "cmake", "commonlisp", "cpp", "css", "dockerfile", "go", "gomod", "gowork", "graphql", "haskell", "html", "java", "javascript", "jsdoc", "json", "json5", "jsonc", "latex", "llvm", "lua", "make", "markdown", "markdown_inline", "ninja", "perl", "proto", "python", "query", "regex", "ruby", "rust", "scala", "scheme", "scss", "sql", "svelte", "toml", "tsx", "typescript", "vim", "vue", "yaml"}
+local ts_parsers = {"bash", "c", "cmake", "commonlisp", "cpp", "css", "dockerfile", "go", "gomod", "gowork", "graphql", "haskell", "hlsl", "html", "java", "javascript", "jsdoc", "json", "json5", "jsonc", "latex", "llvm", "lua", "make", "markdown", "markdown_inline", "ninja", "perl", "proto", "python", "query", "regex", "ruby", "rust", "scala", "scheme", "scss", "sql", "svelte", "toml", "tsx", "typescript", "vim", "vue", "yaml"}
 
 local ok_ts, ts = pcall(require, 'nvim-treesitter')
 if ok_ts then
